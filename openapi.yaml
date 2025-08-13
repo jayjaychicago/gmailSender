@@ -51,11 +51,11 @@ paths:
               simple_email:
                 summary: Simple text email
                 value:
-                  raw: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
+                  raw: "RnJvbToganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpUbzoganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpTdWJqZWN0OiBoZWxsbyB3b3JsZAoKaGVsbG8gd29ybGQ"
               html_email:
                 summary: HTML email with threading
                 value:
-                  raw: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
+                  raw: "RnJvbToganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpUbzoganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpTdWJqZWN0OiBoZWxsbyB3b3JsZAoKaGVsbG8gd29ybGQ"
                   threadId: "1234567890abcdef"
       responses:
         '200':
