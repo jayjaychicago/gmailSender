@@ -1,77 +1,62 @@
 openapi: 3.0.3
 info:
-  title: Gmail API - Send Email (with Structured Body)
-  version: v1
+  title: Gmail API - Send Email
   description: |
-    Send mail via Gmail. Supports either:
-    • raw RFC822 (base64url) passed through to Gmail
-    • a structured JSON body (from/to/subject/text/html/attachments) that a proxy converts to RFC822
+    Gmail API specification for sending emails. This API allows applications to send emails 
+    on behalf of users using OAuth 2.0 authentication.
+  version: "v1"
+  contact:
+    name: Google Gmail API
+    url: https://developers.google.com/gmail/api
+  license:
+    name: Google APIs Terms of Service
+    url: https://developers.google.com/terms
 
 servers:
   - url: https://gmail.googleapis.com
     description: Gmail API production server
-  - url: https://gmailsender.myinstantapi.com/prod/v1
-    description: Your proxy that assembles RFC822 and forwards to Gmail
 
 security:
-  - oauth2:
-    - https://www.googleapis.com/auth/gmail.send
+  - oauth2: [https://www.googleapis.com/auth/gmail.send]
 
 paths:
   /gmail/v1/users/{userId}/messages/send:
     post:
       summary: Send an email message
-      description: Send an email using either raw RFC822 or a structured JSON body.
+      description: |
+        Sends the specified message to the recipients in the To, Cc, and Bcc headers.
+        The message must be a valid RFC 2822 message.
       operationId: sendMessage
-      tags: [Messages]
+      tags:
+        - Messages
       security:
-        - oauth2:
-          - https://www.googleapis.com/auth/gmail.send
+        - oauth2: [https://www.googleapis.com/auth/gmail.send]
       parameters:
         - name: userId
           in: path
           required: true
-          description: The user's email address. Use "me" for the authenticated user.
+          description: |
+            The user's email address. The special value "me" can be used to indicate 
+            the authenticated user.
           schema:
             type: string
-            example: me
+            example: "me"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/SendMessageRequestRaw'
-                - $ref: '#/components/schemas/SendMessageRequestStructured'
+              $ref: '#/components/schemas/SendMessageRequest'
             examples:
-              raw_minimal:
-                summary: Raw RFC822 (base64url)
+              simple_email:
+                summary: Simple text email
                 value:
                   raw: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
-              structured_text:
-                summary: Structured text email
+              html_email:
+                summary: HTML email with threading
                 value:
-                  structured:
-                    from: "me"
-                    to: ["recipient@example.com"]
-                    subject: "Hello from Gmail API"
-                    text: "This is a test email."
-              structured_html_cc_bcc:
-                summary: Structured HTML with CC/BCC and attachment
-                value:
-                  structured:
-                    from: "me"
-                    to: ["a@example.com","b@example.com"]
-                    cc: ["c@example.com"]
-                    bcc: ["d@example.com"]
-                    subject: "Weekly Update"
-                    html: "<h1>Hi team</h1><p>Updates inside.</p>"
-                    headers:
-                      Reply-To: "ops@example.com"
-                    attachments:
-                      - filename: "report.pdf"
-                        mimeType: "application/pdf"
-                        contentBase64: "JVBERi0xLjQKJ..."
+                  raw: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
+                  threadId: "1234567890abcdef"
       responses:
         '200':
           description: Message sent successfully
@@ -92,20 +77,30 @@ paths:
               example:
                 error:
                   code: 400
-                  message: Invalid message format
-                  status: INVALID_ARGUMENT
+                  message: "Invalid message format"
+                  status: "INVALID_ARGUMENT"
         '401':
           description: Unauthorized - Invalid or missing authentication
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: 401
+                  message: "Request is missing required authentication credential"
+                  status: "UNAUTHENTICATED"
         '403':
           description: Forbidden - Insufficient permissions
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: 403
+                  message: "Insufficient Permission: Request had insufficient authentication scopes"
+                  status: "PERMISSION_DENIED"
         '429':
           description: Rate limit exceeded
           content:
@@ -123,7 +118,9 @@ components:
   securitySchemes:
     oauth2:
       type: oauth2
-      description: Gmail API uses OAuth 2.0 for authentication/authorization.
+      description: |
+        Gmail API uses OAuth 2.0 for authentication and authorization. You need to obtain 
+        an access token with the appropriate scope to send emails.
       flows:
         authorizationCode:
           authorizationUrl: https://accounts.google.com/o/oauth2/auth
@@ -139,93 +136,25 @@ components:
             https://www.googleapis.com/auth/gmail.compose: Compose and send email messages
 
   schemas:
-    SendMessageRequestRaw:
+    SendMessageRequest:
       type: object
-      description: Native Gmail send using base64url-encoded RFC822 in the `raw` field.
-      required: [raw]
+      description: Request to send an email message
+      required:
+        - raw
       properties:
         raw:
           type: string
           format: byte
-          description: RFC 2822 message, base64url-encoded. Include all headers and body.
+          description: |
+            The entire email message in an RFC 2822 formatted and base64url encoded string.
+            This includes headers (To, From, Subject, etc.) and the message body.
+          example: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
         threadId:
           type: string
-          description: Gmail thread ID to append to (omit to start new thread).
-
-    SendMessageRequestStructured:
-      type: object
-      description: Structured message that the proxy converts to RFC822 and base64url.
-      required: [structured]
-      properties:
-        structured:
-          type: object
-          required: [to, subject]
-          properties:
-            from:
-              type: string
-              description: Sender email. Use "me" for the authenticated user. Defaults to "me" if omitted.
-              example: me
-            to:
-              type: array
-              items:
-                type: string
-                format: email
-              minItems: 1
-              description: Primary recipients.
-            cc:
-              type: array
-              items:
-                type: string
-                format: email
-            bcc:
-              type: array
-              items:
-                type: string
-                format: email
-            replyTo:
-              type: string
-              format: email
-              description: Reply-To address.
-            subject:
-              type: string
-            text:
-              type: string
-              description: Plaintext body.
-            html:
-              type: string
-              description: HTML body.
-            headers:
-              type: object
-              additionalProperties:
-                type: string
-              description: Additional headers (e.g., In-Reply-To, References).
-            threadId:
-              type: string
-              description: Gmail thread ID to append to.
-            attachments:
-              type: array
-              items:
-                $ref: '#/components/schemas/Attachment'
-              description: Optional attachments.
-
-    Attachment:
-      type: object
-      required: [filename, mimeType, contentBase64]
-      properties:
-        filename:
-          type: string
-        mimeType:
-          type: string
-          example: application/pdf
-        contentBase64:
-          type: string
-          description: File bytes in standard base64 (proxy handles transfer encoding).
-        contentId:
-          type: string
-          description: Content-ID for inline attachments (reference as cid:... in HTML).
-        inline:
-          type: boolean
-          description: If true, mark as inline.
+          description: |
+            ID of the thread the message belongs to. To start a new thread, omit this field.
+            If you specify a thread ID, the message will be added to that thread.
+          example: "1234567890abcdef"
 
     Message:
       type: object
@@ -233,40 +162,77 @@ components:
       properties:
         id:
           type: string
-          description: Immutable message ID.
+          description: The immutable ID of the message
+          example: "1234567890abcdef"
         threadId:
           type: string
-          description: Thread ID the message belongs to.
+          description: The ID of the thread the message belongs to
+          example: "1234567890abcdef"
         labelIds:
           type: array
           items:
             type: string
-          description: Labels applied to the message.
+          description: List of IDs of labels applied to this message
+          example: ["SENT", "IMPORTANT"]
         snippet:
           type: string
-          description: Short part of the message text.
+          description: A short part of the message text
+          example: "This is a test email sent via Gmail API."
         historyId:
           type: string
+          description: The ID of the last history record that modified this message
         internalDate:
           type: string
-          description: Message creation timestamp (epoch ms).
+          description: The internal message creation timestamp (epoch ms)
         sizeEstimate:
           type: integer
+          description: Estimated size in bytes of the message
 
     Error:
       type: object
-      description: Error response
+      description: Error response from Gmail API
       properties:
         error:
           type: object
           properties:
             code:
               type: integer
+              description: HTTP status code
+              example: 400
             message:
               type: string
+              description: Error message
+              example: "Invalid message format"
             status:
               type: string
+              description: Error status
+              example: "INVALID_ARGUMENT"
             details:
               type: array
               items:
                 type: object
+              description: Additional error details
+
+  examples:
+    simple_text_email_raw:
+      summary: Simple text email (before base64url encoding)
+      description: |
+        Here's what the raw message looks like before base64url encoding:
+        ```
+        To: recipient@example.com
+        Subject: Hello from Gmail API
+        
+        This is a test email sent via Gmail API.
+        ```
+
+    html_email_raw:
+      summary: HTML email (before base64url encoding)
+      description: |
+        Here's what an HTML email looks like before base64url encoding:
+        ```
+        To: recipient@example.com
+        Subject: Hello from Gmail API
+        Content-Type: text/html; charset=UTF-8
+        
+        <html><body><h1>Hello!</h1><p>This is an HTML email.</p></body></html>
+        ```
