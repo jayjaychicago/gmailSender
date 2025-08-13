@@ -56,7 +56,7 @@ paths:
               simple_raw_email:
                 summary: Raw RFC822 (base64url)
                 value:
-                  raw: "VG86IHJlY2lwaWVudEBleGFtcGxlLmNvbQ0KU3ViamVjdDogSGVsbG8gZnJvbSBHbWFpbCBBUEkNCg0KVGhpcyBpcyBhIHRlc3QgZW1haWwgc2VudCB2aWEgR21haWwgQVBJLg=="
+                  raw: "RnJvbToganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpUbzoganVsaWVucG1qYWNxdWV0QGdtYWlsLmNvbQpTdWJqZWN0OiBIZWxsbyBXb3JsZAoKSGVsbG8gV29ybGQK"
               simple_structured_text:
                 summary: Structured text email
                 value:
