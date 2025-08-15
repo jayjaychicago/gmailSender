@@ -7,63 +7,80 @@ info:
     name: Google Calendar API Documentation
     url: https://developers.google.com/calendar/api/v3/reference
 servers:
+  - url: https://calendarditor.myinstantapi.com/google-calendar-api-v3/v3
+    description: Proxy (your edge)
   - url: https://www.googleapis.com/calendar/v3
     description: Google Calendar API v3
 
 security:
-  - oauth2: ['https://www.googleapis.com/auth/calendar']
+  - oauth2: ['https://www.googleapis.com/auth/calendar.events']
 
 paths:
   /calendars/{calendarId}/events:
     post:
       summary: Create a new event
       operationId: createEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
           description: Calendar identifier (use 'primary' for the primary calendar)
-          schema:
-            type: string
-            example: primary
+          schema: { type: string, example: primary }
         - name: conferenceDataVersion
           in: query
-          description: Version number of conference data supported by the API client
-          schema:
-            type: integer
-            enum: [0, 1]
+          description: >
+            Version of conference data supported by the client.
+            **Required = 1** when sending `conferenceData.createRequest` to generate a Google Meet link.
+          schema: { type: integer, enum: [0, 1], default: 0 }
         - name: maxAttendees
           in: query
-          description: Maximum number of attendees to include in the response
-          schema:
-            type: integer
+          description: Maximum number of attendees to include in the response.
+          schema: { type: integer, minimum: 1 }
         - name: sendNotifications
           in: query
-          description: Deprecated. Use sendUpdates instead.
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          description: Guests who should receive notifications about the creation of the new event
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          description: Guests who should receive notifications about the creation of the new event.
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
         - name: supportsAttachments
           in: query
-          description: Whether API client performing operation supports event attachments
-          schema:
-            type: boolean
-            default: false
+          description: Whether the client supports event attachments.
+          schema: { type: boolean, default: false }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventWrite'
+            examples:
+              timed:
+                summary: Timed event (mon 4–6pm ET)
+                value:
+                  summary: Meet & Greet Howarth Park
+                  location: Howarth Park, Birmingham, MI
+                  start: { dateTime: '2025-08-25T16:00:00-04:00', timeZone: 'America/Detroit' }
+                  end:   { dateTime: '2025-08-25T18:00:00-04:00', timeZone: 'America/Detroit' }
+                  recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO']
+              allDay:
+                summary: All-day event
+                value:
+                  summary: Brookside Fall Festival
+                  start: { date: '2025-10-05' }
+                  end:   { date: '2025-10-06' }
+              withMeet:
+                summary: Timed event with Google Meet
+                value:
+                  summary: Family Assoc Meeting
+                  start: { dateTime: '2025-09-16T08:45:00-04:00', timeZone: 'America/Detroit' }
+                  end:   { dateTime: '2025-09-16T09:45:00-04:00', timeZone: 'America/Detroit' }
+                  conferenceData:
+                    createRequest:
+                      requestId: 'meet-req-001'
+                      conferenceSolutionKey: { type: 'hangoutsMeet' }
       responses:
         '200':
           description: Event created successfully
@@ -71,67 +88,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-        '400':
-          description: Bad request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Calendar not found
+        '400': { description: Bad request (e.g., invalid field combinations) }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (insufficient scope/ACL) }
+        '404': { description: Calendar not found }
 
   /calendars/{calendarId}/events/{eventId}:
     put:
-      summary: Update an existing event
+      summary: Update an existing event (full update)
       operationId: updateEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
-          description: Calendar identifier
-          schema:
-            type: string
+          schema: { type: string }
         - name: eventId
           in: path
           required: true
-          description: Event identifier
-          schema:
-            type: string
+          schema: { type: string }
         - name: conferenceDataVersion
           in: query
-          schema:
-            type: integer
-            enum: [0, 1]
+          schema: { type: integer, enum: [0, 1], default: 0 }
         - name: maxAttendees
           in: query
-          schema:
-            type: integer
+          schema: { type: integer, minimum: 1 }
         - name: sendNotifications
           in: query
-          description: Deprecated. Use sendUpdates instead.
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          description: Guests who should receive notifications about the event update
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          description: Guests who should receive notifications about the update.
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
         - name: supportsAttachments
           in: query
-          schema:
-            type: boolean
-            default: false
+          schema: { type: boolean, default: false }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventWrite'
       responses:
         '200':
           description: Event updated successfully
@@ -139,62 +138,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-        '400':
-          description: Bad request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Event not found
+        '400': { description: Bad request }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '404': { description: Event not found }
 
     patch:
       summary: Partially update an existing event
       operationId: patchEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: eventId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: conferenceDataVersion
           in: query
-          schema:
-            type: integer
-            enum: [0, 1]
+          schema: { type: integer, enum: [0, 1], default: 0 }
         - name: maxAttendees
           in: query
-          schema:
-            type: integer
+          schema: { type: integer, minimum: 1 }
         - name: sendNotifications
           in: query
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          description: Guests who should receive notifications about the update.
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
         - name: supportsAttachments
           in: query
-          schema:
-            type: boolean
-            default: false
+          schema: { type: boolean, default: false }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              # Allow partial fields on patch
+              allOf:
+                - $ref: '#/components/schemas/EventWrite'
       responses:
         '200':
           description: Event patched successfully
@@ -206,77 +193,59 @@ paths:
     delete:
       summary: Delete an event
       operationId: deleteEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: eventId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: sendNotifications
           in: query
-          description: Deprecated. Use sendUpdates instead.
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          description: Guests who should receive notifications about the cancellation of the event
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          description: Guests who should receive notifications about the cancellation.
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
       responses:
-        '204':
-          description: Event deleted successfully
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Event not found
+        '204': { description: Event deleted successfully }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+        '404': { description: Event not found }
 
   /calendars/{calendarId}/events/{eventId}/move:
     post:
       summary: Move an event to another calendar
       operationId: moveEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
-          description: Calendar identifier of the source calendar
-          schema:
-            type: string
+          description: Source calendar ID
+          schema: { type: string }
         - name: eventId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: destination
           in: query
           required: true
-          description: Calendar identifier of the target calendar
-          schema:
-            type: string
+          description: Target calendar ID
+          schema: { type: string }
         - name: sendNotifications
           in: query
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
       responses:
         '200':
           description: Event moved successfully
@@ -287,34 +256,29 @@ paths:
 
   /calendars/{calendarId}/events/quickAdd:
     post:
-      summary: Create an event based on a simple text string
+      summary: Create an event from a simple text string
       operationId: quickAddEvent
-      tags:
-        - Events
+      tags: [Events]
       parameters:
         - name: calendarId
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: text
           in: query
           required: true
-          description: The text describing the event to be created
+          description: The natural language text describing the event.
           schema:
             type: string
             example: "Appointment at Somewhere on June 3rd 10am-10:25am"
         - name: sendNotifications
           in: query
-          schema:
-            type: boolean
-            default: false
+          description: Deprecated. Use `sendUpdates` instead.
+          deprecated: true
+          schema: { type: boolean, default: false }
         - name: sendUpdates
           in: query
-          schema:
-            type: string
-            enum: [all, externalOnly, none]
-            default: none
+          schema: { type: string, enum: [all, externalOnly, none], default: none }
       responses:
         '200':
           description: Event created successfully
@@ -332,205 +296,291 @@ components:
           authorizationUrl: https://accounts.google.com/o/oauth2/auth
           tokenUrl: https://oauth2.googleapis.com/token
           scopes:
+            'https://www.googleapis.com/auth/calendar.events': View and edit events
             'https://www.googleapis.com/auth/calendar': Full access to calendars
-            'https://www.googleapis.com/auth/calendar.events': Access to events
 
   schemas:
+    # ---------- Write schema (requests) ----------
+    EventWrite:
+      type: object
+      description: Payload for creating/updating events. Excludes server-managed/read-only fields.
+      properties:
+        status:
+          type: string
+          enum: [confirmed, tentative, cancelled]
+        summary:
+          type: string
+          example: "Meet & Greet Howarth Park"
+        description:
+          type: string
+        location:
+          type: string
+          example: "Howarth Park, Birmingham, MI"
+        colorId:
+          type: string
+        # Mutually exclusive all-day vs timed:
+        start:
+          oneOf:
+            - $ref: '#/components/schemas/EventDateAllDay'
+            - $ref: '#/components/schemas/EventDateTimed'
+        end:
+          oneOf:
+            - $ref: '#/components/schemas/EventDateAllDay'
+            - $ref: '#/components/schemas/EventDateTimed'
+        endTimeUnspecified:
+          type: boolean
+          description: >
+            Only for all-day events. Don't set when using dateTime.
+        recurrence:
+          type: array
+          items: { type: string, example: "RRULE:FREQ=WEEKLY;BYDAY=MO" }
+        attendees:
+          type: array
+          items: { $ref: '#/components/schemas/AttendeeWrite' }
+        extendedProperties:
+          type: object
+          properties:
+            private:
+              type: object
+              additionalProperties: { type: string }
+            shared:
+              type: object
+              additionalProperties: { type: string }
+        conferenceData:
+          $ref: '#/components/schemas/ConferenceDataWrite'
+        anyoneCanAddSelf:
+          type: boolean
+          default: false
+        guestsCanInviteOthers:
+          type: boolean
+          default: true
+        guestsCanModify:
+          type: boolean
+          default: false
+        guestsCanSeeOtherGuests:
+          type: boolean
+          default: true
+        reminders:
+          $ref: '#/components/schemas/Reminders'
+        source:
+          type: object
+          properties:
+            url: { type: string, format: uri }
+            title: { type: string }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+        eventType:
+          type: string
+          enum: [default, outOfOffice, focusTime, workingLocation]
+          default: default
+      required: [start, end, summary]
+
+    EventDateAllDay:
+      type: object
+      description: All-day event date (no time zone).
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2025-10-05'
+      required: [date]
+      additionalProperties: false
+
+    EventDateTimed:
+      type: object
+      description: Timed event date/time with time zone.
+      properties:
+        dateTime:
+          type: string
+          format: date-time
+          example: '2025-08-25T16:00:00-04:00'
+        timeZone:
+          type: string
+          example: 'America/Detroit'
+      required: [dateTime]
+      additionalProperties: false
+
+    AttendeeWrite:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        resource:
+          type: boolean
+          default: false
+        optional:
+          type: boolean
+          default: false
+        responseStatus:
+          type: string
+          enum: [needsAction, declined, tentative, accepted]
+        comment:
+          type: string
+        additionalGuests:
+          type: integer
+          default: 0
+
+    ConferenceDataWrite:
+      type: object
+      description: >
+        Include only when you want to **create** a Meet link. You must also call the endpoint with
+        `?conferenceDataVersion=1`. If omitted, no conference will be created.
+      properties:
+        createRequest:
+          type: object
+          required: [requestId, conferenceSolutionKey]
+          properties:
+            requestId:
+              type: string
+              description: Unique key to avoid duplicate conference creation.
+            conferenceSolutionKey:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [hangoutsMeet]
+
+    # ---------- Read schema (responses) ----------
     Event:
       type: object
       properties:
         id:
           type: string
-          description: Opaque identifier of the event
           readOnly: true
         kind:
           type: string
-          description: Type of the resource
           enum: [calendar#event]
           readOnly: true
         etag:
           type: string
-          description: ETag of the resource
           readOnly: true
         status:
           type: string
-          description: Status of the event
           enum: [confirmed, tentative, cancelled]
         htmlLink:
           type: string
-          description: An absolute link to this event in the Google Calendar Web UI
           readOnly: true
         created:
           type: string
           format: date-time
-          description: Creation time of the event
           readOnly: true
         updated:
           type: string
           format: date-time
-          description: Last modification time of the event
           readOnly: true
         summary:
           type: string
-          description: Title of the event
-          example: "Meet & Greet Howarth Park"
         description:
           type: string
-          description: Description of the event
         location:
           type: string
-          description: Geographic location of the event
-          example: "Howarth Park, Birmingham, MI"
         colorId:
           type: string
-          description: The color of the event
         creator:
           $ref: '#/components/schemas/Person'
         organizer:
           $ref: '#/components/schemas/Person'
         start:
-          $ref: '#/components/schemas/EventDateTime'
+          oneOf:
+            - $ref: '#/components/schemas/EventDateAllDay'
+            - $ref: '#/components/schemas/EventDateTimed'
         end:
-          $ref: '#/components/schemas/EventDateTime'
+          oneOf:
+            - $ref: '#/components/schemas/EventDateAllDay'
+            - $ref: '#/components/schemas/EventDateTimed'
         endTimeUnspecified:
           type: boolean
-          description: Whether the end time is actually unspecified
         recurrence:
           type: array
-          description: List of RRULE, EXRULE, RDATE and EXDATE lines for a recurring event
-          items:
-            type: string
-            example: "RRULE:FREQ=WEEKLY;BYDAY=MO"
+          items: { type: string }
         recurringEventId:
           type: string
-          description: For an instance of a recurring event, this is the id of the recurring event to which this instance belongs
+          description: Id of the recurring series if this is an instance.
+          readOnly: true
         originalStartTime:
-          $ref: '#/components/schemas/EventDateTime'
+          oneOf:
+            - $ref: '#/components/schemas/EventDateAllDay'
+            - $ref: '#/components/schemas/EventDateTimed'
         transparency:
           type: string
-          description: Whether the event blocks time on the calendar
           enum: [opaque, transparent]
           default: opaque
         visibility:
           type: string
-          description: Visibility of the event
           enum: [default, public, private, confidential]
           default: default
         iCalUID:
           type: string
-          description: Event unique identifier as defined in RFC5545
+          readOnly: true
         sequence:
           type: integer
-          description: Sequence number as per iCalendar
+          readOnly: true
         attendees:
           type: array
-          description: The attendees of the event
-          items:
-            $ref: '#/components/schemas/Attendee'
+          items: { $ref: '#/components/schemas/Attendee' }
         attendeesOmitted:
           type: boolean
-          description: Whether attendees were omitted from the original request
         extendedProperties:
           type: object
-          description: Extended properties of the event
           properties:
             private:
               type: object
-              additionalProperties:
-                type: string
+              additionalProperties: { type: string }
             shared:
               type: object
-              additionalProperties:
-                type: string
+              additionalProperties: { type: string }
         hangoutLink:
           type: string
-          description: An absolute link to the Google+ hangout associated with this event
           readOnly: true
         conferenceData:
           $ref: '#/components/schemas/ConferenceData'
         gadget:
           type: object
-          description: A gadget that extends this event
         anyoneCanAddSelf:
           type: boolean
-          description: Whether anyone can invite themselves to the event
-          default: false
         guestsCanInviteOthers:
           type: boolean
-          description: Whether attendees other than the organizer can invite others to the event
-          default: true
         guestsCanModify:
           type: boolean
-          description: Whether attendees other than the organizer can modify the event
-          default: false
         guestsCanSeeOtherGuests:
           type: boolean
-          description: Whether attendees other than the organizer can see who the event's attendees are
-          default: true
         privateCopy:
           type: boolean
-          description: If set to True, Event propagation is disabled
-          default: false
         locked:
           type: boolean
-          description: Whether this is a locked event copy
-          default: false
         reminders:
           $ref: '#/components/schemas/Reminders'
         source:
           type: object
-          description: Source from which the event was created
           properties:
-            url:
-              type: string
-              description: URL of the source pointing to a resource
-            title:
-              type: string
-              description: Title of the source
+            url: { type: string }
+            title: { type: string }
         attachments:
           type: array
-          description: File attachments for the event
-          items:
-            $ref: '#/components/schemas/Attachment'
+          items: { $ref: '#/components/schemas/Attachment' }
         eventType:
           type: string
-          description: Specific type of the event
           enum: [default, outOfOffice, focusTime, workingLocation]
           default: default
-
-    EventDateTime:
-      type: object
-      description: The start or end time of an event
-      properties:
-        date:
-          type: string
-          format: date
-          description: The date, in the format "yyyy-mm-dd", if this is an all-day event
-        dateTime:
-          type: string
-          format: date-time
-          description: The time, as a combined date-time value (formatted according to RFC3339)
-          example: "2025-08-25T16:00:00-04:00"
-        timeZone:
-          type: string
-          description: The time zone in which the time is specified
-          example: "America/Detroit"
 
     Person:
       type: object
       properties:
         id:
           type: string
-          description: The person's Profile ID
+          description: Profile ID
         email:
           type: string
-          description: The person's email address
+          format: email
         displayName:
           type: string
-          description: The person's name
         self:
           type: boolean
-          description: Whether this entry represents the calendar on which this copy of the event appears
 
     Attendee:
       allOf:
@@ -539,88 +589,64 @@ components:
           properties:
             organizer:
               type: boolean
-              description: Whether the attendee is the organizer of the event
               readOnly: true
             resource:
               type: boolean
-              description: Whether the attendee is a resource
               default: false
             optional:
               type: boolean
-              description: Whether this is an optional attendee
               default: false
             responseStatus:
               type: string
-              description: The attendee's response status
               enum: [needsAction, declined, tentative, accepted]
             comment:
               type: string
-              description: The attendee's response comment
             additionalGuests:
               type: integer
-              description: Number of additional guests
               default: 0
 
     Reminders:
       type: object
-      description: Information about the event's reminders
       properties:
         useDefault:
           type: boolean
-          description: Whether the default reminders of the calendar apply to the event
         overrides:
           type: array
-          description: If useDefault is False, this list specifies which reminders to apply to the event
           items:
             type: object
             properties:
               method:
                 type: string
                 enum: [email, popup]
-                description: The method used by this reminder
               minutes:
                 type: integer
-                description: Number of minutes before the start of the event when the reminder should trigger
                 example: 1440
 
     ConferenceData:
       type: object
-      description: The conference-related information
       properties:
         createRequest:
           type: object
-          description: A request to generate a new conference and attach it to the event
         entryPoints:
           type: array
-          description: Information about individual conference entry points
-          items:
-            type: object
+          items: { type: object }
         conferenceSolution:
           type: object
-          description: The conference solution
         conferenceId:
           type: string
-          description: The ID of the conference
         signature:
           type: string
-          description: The signature of the conference data
 
     Attachment:
       type: object
-      description: File attachment for the event
       properties:
         fileUrl:
           type: string
-          description: URL link to the attachment
         title:
           type: string
-          description: Attachment title
         mimeType:
           type: string
-          description: Internet media type (MIME type) of the attachment
         iconLink:
           type: string
-          description: URL link to the attachment's icon
         fileId:
           type: string
-          description: ID of the attached file
