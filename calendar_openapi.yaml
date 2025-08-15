@@ -7,8 +7,6 @@ info:
     name: Google Calendar API Documentation
     url: https://developers.google.com/calendar/api/v3/reference
 servers:
-  - url: https://calendarditor.myinstantapi.com/google-calendar-api-v3/v3
-    description: Proxy (your edge)
   - url: https://www.googleapis.com/calendar/v3
     description: Google Calendar API v3
 
