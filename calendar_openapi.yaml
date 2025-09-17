@@ -15,6 +15,112 @@ security:
 
 paths:
   /calendars/{calendarId}/events:
+    get:
+      summary: List events
+      operationId: listEvents
+      tags: [Events]
+      parameters:
+        - name: calendarId
+          in: path
+          required: true
+          description: Calendar identifier (use 'primary' for the primary calendar)
+          schema: { type: string, example: primary }
+
+        # --- Common list filters ---
+        - name: q
+          in: query
+          description: Free text search terms to filter by (matches against title, description, location, etc.).
+          schema: { type: string }
+        - name: iCalUID
+          in: query
+          description: Specifies an event ID in the iCalendar format to filter by.
+          schema: { type: string }
+        - name: timeMin
+          in: query
+          description: Lower bound (exclusive) for an event's end/start time to filter by (RFC3339 timestamp).
+          schema: { type: string, format: date-time }
+        - name: timeMax
+          in: query
+          description: Upper bound (exclusive) for an event's start time to filter by (RFC3339 timestamp).
+          schema: { type: string, format: date-time }
+        - name: updatedMin
+          in: query
+          description: Lower bound for an event's last updated time to filter by (RFC3339 timestamp).
+          schema: { type: string, format: date-time }
+        - name: singleEvents
+          in: query
+          description: Whether to expand recurring events into instances and only return single one-off events and instances.
+          schema: { type: boolean, default: false }
+        - name: orderBy
+          in: query
+          description: >
+            Order of the events returned. If set to `startTime`, `singleEvents` must be `true`.
+          schema:
+            type: string
+            enum: [startTime, updated]
+        - name: maxResults
+          in: query
+          description: Maximum number of events returned on one result page.
+          schema: { type: integer, minimum: 1, maximum: 2500, default: 250 }
+        - name: pageToken
+          in: query
+          description: Token specifying which result page to return.
+          schema: { type: string }
+        - name: showDeleted
+          in: query
+          description: Whether to include deleted events (with `status=cancelled`) in the results.
+          schema: { type: boolean, default: false }
+        - name: timeZone
+          in: query
+          description: Time zone used in the response for `start`/`end` output if not explicitly set on the event.
+          schema: { type: string }
+        - name: privateExtendedProperty
+          in: query
+          description: >
+            Filters by a private extended property (format `key=value`). May be specified multiple times.
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+        - name: sharedExtendedProperty
+          in: query
+          description: >
+            Filters by a shared extended property (format `key=value`). May be specified multiple times.
+          schema:
+            type: array
+            items: { type: string }
+          style: form
+          explode: true
+
+        # --- Sync-related (incremental sync) ---
+        - name: syncToken
+          in: query
+          description: >
+            Token obtained from a previous `list` response to get incremental changes since then.
+            Must not be combined with `timeMin`, `timeMax`, `q`, `iCalUID`, or `updatedMin`.
+          schema: { type: string }
+
+        # --- Legacy/compat flags (kept for parity) ---
+        - name: alwaysIncludeEmail
+          in: query
+          description: >
+            Deprecated. When `true`, ensures that the resulting events' attendees' emails are present.
+          deprecated: true
+          schema: { type: boolean, default: false }
+
+      responses:
+        '200':
+          description: Events listed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventsList'
+        '400': { description: Bad request (e.g., invalid filter combinations) }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden (insufficient scope/ACL) }
+        '404': { description: Calendar not found }
+
     post:
       summary: Create a new event
       operationId: createEvent
@@ -298,6 +404,25 @@ components:
             'https://www.googleapis.com/auth/calendar': Full access to calendars
 
   schemas:
+    # ---------- List response wrapper ----------
+    EventsList:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [calendar#events]
+          readOnly: true
+        nextPageToken:
+          type: string
+          description: Token to retrieve the next page of results.
+        nextSyncToken:
+          type: string
+          description: Token for incremental sync on subsequent list calls.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+
     # ---------- Write schema (requests) ----------
     EventWrite:
       type: object
