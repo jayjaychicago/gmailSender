@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Google Calendar Write API
-  description: OpenAPI specification for Google Calendar write operations (create, update, delete events)
+  description: OpenAPI specification for Google Calendar write operations (create, update, delete events )
   version: v3
   contact:
     name: Google Calendar API Documentation
