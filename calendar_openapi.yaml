@@ -51,7 +51,7 @@ paths:
           examples:
             a_window: { summary: (a) Today, value: "2025-09-17T00:00:00-04:00" }
             b_name_search: { summary: (b) Omit, value: "" }
-            c_specific_dt: { summary: (c), value: "2026-01-01T12:00:00-05:00" }
+            c_specific_dt: { summary: (c) , value: "2026-01-01T12:00:00-05:00" }
 
         - name: timeMax
           in: query
