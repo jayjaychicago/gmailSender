@@ -107,7 +107,7 @@ paths:
                 value:
                   summary: Meet at Pronto
                   start: { dateTime: '2026-06-16T16:00:00-04:00', timeZone: 'America/Detroit' }
-                  end:   { dateTime: '2025-06-16T18:00:00-04:00', timeZone: 'America/Detroit' }
+                  end:   { dateTime: '2026-06-16T18:00:00-04:00', timeZone: 'America/Detroit' }
                   recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO']
               allDay:
                 summary: All-day event
