@@ -103,28 +103,40 @@ paths:
               $ref: '#/components/schemas/EventWrite'
             examples:
               timed:
-                summary: Timed event (mon 4–6pm ET)
+                summary: Timed event (Mon 4–6pm ET)
                 value:
                   summary: Meet at Pronto
-                  start: { dateTime: '2026-06-16T16:00:00-04:00', timeZone: 'America/Detroit' }
-                  end:   { dateTime: '2026-06-16T18:00:00-04:00', timeZone: 'America/Detroit' }
-                  recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO']
+                  start:
+                    dateTime: '2026-06-15T16:00:00-04:00'
+                    timeZone: 'America/Detroit'
+                  end:
+                    dateTime: '2026-06-15T18:00:00-04:00'
+                    timeZone: 'America/Detroit'
+        
               allDay:
                 summary: All-day event
                 value:
                   summary: Woohoo
-                  start: { date: '2025-10-05' }
-                  end:   { date: '2025-10-06' }
+                  start:
+                    date: '2025-10-05'
+                  end:
+                    date: '2025-10-06'
+        
               withMeet:
                 summary: Meet at Pronto
                 value:
                   summary: Meet at Pronto
-                  start: { dateTime: '2025-09-16T08:45:00-04:00', timeZone: 'America/Detroit' }
-                  end:   { dateTime: '2025-09-16T09:45:00-04:00', timeZone: 'America/Detroit' }
+                  start:
+                    dateTime: '2025-09-16T08:45:00-04:00'
+                    timeZone: 'America/Detroit'
+                  end:
+                    dateTime: '2025-09-16T09:45:00-04:00'
+                    timeZone: 'America/Detroit'
                   conferenceData:
                     createRequest:
                       requestId: 'meet-req-001'
-                      conferenceSolutionKey: { type: 'hangoutsMeet' }
+                      conferenceSolutionKey:
+                        type: 'hangoutsMeet'
       responses:
         '200':
           description: Event created successfully
