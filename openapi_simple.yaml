@@ -4,6 +4,9 @@ info:
   description: |
     Gmail API specification for sending emails. This API allows applications to send emails 
     on behalf of users using OAuth 2.0 authentication.
+
+    Every operation acts on the authenticated user's own mailbox ("me"). Recipients go
+    in the To, Cc and Bcc headers inside the message — there is no recipient parameter.
   version: "v1"
   contact:
     name: Google Gmail API
@@ -26,23 +29,20 @@ paths:
       description: |
         Sends the specified message to the recipients in the To, Cc, and Bcc headers.
         The message must be a valid RFC 2822 message.
+
+        Sends from the authenticated user's own address — the mailbox is fixed to "me"
+        in the path, so there is nothing to choose. The recipient is the To header
+        INSIDE the message, never a parameter.
       operationId: sendMessage
       tags:
         - Messages
       security:
         - oauth2: [https://www.googleapis.com/auth/gmail.send]
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          description: |
-            The user's email address. The special value "me" can be used to indicate 
-            the authenticated user.
-          schema:
-            type: string
-            example: "me"
       requestBody:
         required: true
+        description: |
+          The message to send. `raw` is the complete RFC 2822 email — headers, a blank
+          line, then the body — base64url encoded.
         content:
           application/json:
             schema:
@@ -148,7 +148,8 @@ components:
           description: |
             The entire email message in an RFC 2822 formatted and base64url encoded string.
             This includes headers (To, From, Subject, etc.) and the message body.
-          example: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSAoKVGhpcyBpcyBhIHRlc3Qu"
+            The To header inside this message is what determines the recipient.
+          example: "RnJvbTogbWUNCiBUbzogcmVjaXBpZW50QGV4YW1wbGUuY29tCgpTdWJqZWN0OiBIZWxsbyBmcm9tIEdNYWlsIEFQSQoKVGhpcyBpcyBhIHRlc3Qu"
         threadId:
           type: string
           description: |
